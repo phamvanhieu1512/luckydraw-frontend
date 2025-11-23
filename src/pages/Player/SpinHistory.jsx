@@ -1,56 +1,122 @@
 import React, { useEffect, useState } from "react";
-import {
-  Table,
-  Card,
-  Typography,
-  DatePicker,
-  Row,
-  Col,
-  Avatar,
-  message,
-} from "antd";
-// import axios from "axios";
-// import moment from "moment";
+import { Table, Card, Typography, DatePicker, Row, Col, Input, message } from "antd";
+import { ethers } from "ethers";
+import LuckyDrawABI from "../abis/LuckyDraw.json";
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
+const { Search } = Input;
+
+const CONTRACT_ADDRESS = "0xaE869D99503Bc482C8aaE57956bE78bBa8B03Bb8";
 
 const SpinHistory = () => {
   const [spinLogs, setSpinLogs] = useState([]);
+  const [filteredLogs, setFilteredLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState([]);
+  const [searchText, setSearchText] = useState("");
 
-  // const fetchSpinLogs = async (startDate, endDate) => {
-  //   setLoading(true);
-  //   try {
-  //     const res = await axios.get("/api/player/spin-logs", {
-  //       params: {
-  //         startDate,
-  //         endDate,
-  //       },
-  //     });
-  //     setSpinLogs(res.data);
-  //   } catch (err) {
-  //     console.error(err);
-  //     message.error("Lấy lịch sử mở hộp thất bại");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchSpinLogs();
-  // }, []);
-
-  const handleDateChange = (dates) => {
-    if (!dates || dates.length === 0) {
-      setDateRange([]);
-      // fetchSpinLogs();
-    } else {
-      const [start, end] = dates;
-      setDateRange(dates);
-      // fetchSpinLogs(start.toISOString(), end.toISOString());
+  // Hàm tạo địa chỉ random
+  const generateRandomAddresses = (count) => {
+    const addresses = [];
+    for (let i = 0; i < count; i++) {
+      let addr = "0x" + [...Array(40)]
+        .map(() => Math.floor(Math.random() * 16).toString(16))
+        .join("");
+      addresses.push(addr);
     }
+    return addresses;
+  };
+
+  const fetchAllSpins = async () => {
+    if (!window.ethereum) {
+      message.error("Vui lòng kết nối MetaMask");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, LuckyDrawABI.abi, provider);
+
+      const result = await contract.getAllSpins();
+      const users = result[0];
+      const spins = result[1];
+
+      const allSpinData = users
+        .map((user, idx) =>
+          spins[idx].map((spin) => ({
+            _id: `${user}-${spin.timestamp.toString()}`,
+            user,
+            rewardType: spin.rewardType,
+            amount: ethers.formatEther(spin.amount),
+            nftId: spin.nftId.toString(),
+            createdAt: new Date(Number(spin.timestamp) * 1000),
+          }))
+        )
+        .flat();
+
+      // Thêm 20 user giả lập
+      const fakeUsers = generateRandomAddresses(20);
+      const fakeSpinData = fakeUsers.map((user) => {
+      const types = ["none", "token", "nft"];
+      const rewardType = types[Math.floor(Math.random() * 3)];
+
+      return {
+        _id: `${user}-0`,
+        user,
+        rewardType,
+        amount: rewardType === "token" ? (Math.floor(Math.random() * 10) + 1).toString() : "0.0",
+        nftId: rewardType === "nft" ? Math.floor(Math.random() * 100).toString() : "0.0",
+        createdAt: new Date(Date.now() - Math.floor(Math.random() * 1000000000)),
+      };
+    });
+
+      const combinedData = [...allSpinData, ...fakeSpinData];
+
+      setSpinLogs(combinedData);
+      setFilteredLogs(combinedData);
+    } catch (err) {
+      console.error("Lỗi khi lấy lịch sử spin:", err);
+      message.error("Lấy dữ liệu thất bại");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllSpins();
+  }, []);
+
+  // Lọc theo ngày
+  const handleDateChange = (dates) => {
+    setDateRange(dates || []);
+    filterLogs(searchText, dates);
+  };
+
+  // Lọc theo search + date
+  const filterLogs = (searchValue, dates) => {
+    let data = [...spinLogs];
+
+    if (searchValue) {
+      data = data.filter((log) =>
+        log.user.toLowerCase().includes(searchValue.toLowerCase())
+      );
+    }
+
+    if (dates && dates.length === 2) {
+      const [start, end] = dates;
+      data = data.filter(
+        (log) => log.createdAt >= start.toDate() && log.createdAt <= end.toDate()
+      );
+    }
+
+    setFilteredLogs(data);
+  };
+
+  const handleSearch = (value) => {
+    setSearchText(value);
+    filterLogs(value, dateRange);
   };
 
   const columns = [
@@ -58,26 +124,28 @@ const SpinHistory = () => {
       title: "Thời gian",
       dataIndex: "createdAt",
       key: "createdAt",
-      // render: (date) => moment(date).format("YYYY-MM-DD HH:mm:ss"),
+      render: (date) => date.toLocaleString(),
     },
     {
-      title: "Tên giải",
-      dataIndex: ["prize", "name"],
-      key: "prizeName",
-      render: (text) => text || "Chưa có giải",
+      title: "Người chơi",
+      dataIndex: "user",
+      key: "user",
     },
     {
       title: "Loại giải",
       dataIndex: "rewardType",
       key: "rewardType",
-      render: (type) => type || "none",
+      render: (text) => (text === "none" ? "Không trúng" : text),
     },
     {
-      title: "Ảnh NFT",
-      dataIndex: ["prize", "imageUrl"],
-      key: "image",
-      render: (url) =>
-        url ? <Avatar shape="square" size={64} src={url} /> : <span>—</span>,
+      title: "NFT ID",
+      dataIndex: "nftId",
+      key: "nftId",
+    },
+    {
+      title: "Token",
+      dataIndex: "amount",
+      key: "amount",
     },
   ];
 
@@ -87,19 +155,33 @@ const SpinHistory = () => {
 
       <Card style={{ marginBottom: 20 }}>
         <Row gutter={16}>
-          <Col>
+          {/* <Col>
             <RangePicker
               onChange={handleDateChange}
               value={dateRange}
               allowEmpty={[true, true]}
             />
-          </Col>
+          </Col> */}
+          <Col>
+  <Input
+    style={{ width: '500px'}}
+    placeholder="Tìm theo Người chơi"
+    value={searchText}
+    allowClear
+    onChange={(e) => {
+      const value = e.target.value;
+      setSearchText(value);
+      filterLogs(value, dateRange); // lọc trực tiếp khi gõ
+    }}
+  />
+</Col>
+
         </Row>
       </Card>
 
       <Card>
         <Table
-          dataSource={spinLogs}
+          dataSource={filteredLogs}
           columns={columns}
           rowKey={(record) => record._id}
           pagination={{ pageSize: 10 }}
