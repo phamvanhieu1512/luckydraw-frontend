@@ -4,6 +4,7 @@ import Players from "../pages/Admin/Players";
 import Prizes from "../pages/Admin/Prizes";
 import Settings from "../pages/Admin/Settings";
 import Login from "../pages/Auth/Login";
+import NotFoundPage from "../pages/NotFoundPage";
 import MysteryBox from "../pages/Player/MysteryBox";
 import Profile from "../pages/Player/Profile";
 import SpinHistory from "../pages/Player/SpinHistory";
@@ -44,7 +45,7 @@ export const routes = [
 
   // Player
   {
-    path: "/player/mysteryBox",
+    path: "/player",
     page: MysteryBox,
   },
 
@@ -66,5 +67,10 @@ export const routes = [
   {
     path: "/player/profile",
     page: Profile,
+  },
+
+  {
+    path: "*",
+    page: NotFoundPage,
   },
 ];
