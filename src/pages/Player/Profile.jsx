@@ -14,7 +14,7 @@ const Profile = () => {
   const handleUpdate = (values) => {
     const data = {
       ...values,
-      avatar: file || null, // thêm file vào request
+      image: file || null, // 🔥 KEY PHẢI LÀ image
     };
 
     updateProfile(data);
@@ -22,10 +22,11 @@ const Profile = () => {
   };
 
   const handleFileChange = (info) => {
-    const f = info.file.originFileObj;
+    const f = info.fileList[0]?.originFileObj;
+    if (!f) return;
+
     setFile(f);
 
-    // preview ảnh
     const reader = new FileReader();
     reader.onload = (e) => setPreview(e.target.result);
     reader.readAsDataURL(f);
@@ -33,11 +34,13 @@ const Profile = () => {
 
   if (!user) return null;
 
+  console.log("user.avatarUrl", user.avatarUrl);
+
   return (
     <div style={{ padding: 20, display: "flex", justifyContent: "center" }}>
       <Card style={{ width: 420, textAlign: "center" }} loading={loading}>
         <Avatar
-          src={user.avatarUrl || preview || "/assets/default-avatar.png"}
+          src={preview || "http://localhost:5000" + user.avatarUrl || "/assets/default-avatar.png"}
           size={120}
           style={{ marginBottom: 15 }}
         />
@@ -52,7 +55,6 @@ const Profile = () => {
         </Button>
       </Card>
 
-      {/* Modal chỉnh sửa */}
       <Modal
         title="Chỉnh sửa Profile"
         open={isModalOpen}
@@ -75,40 +77,29 @@ const Profile = () => {
           </Form.Item>
 
           <Form.Item label="Avatar">
-  <Upload
-    accept="image/*"
-    showUploadList={false}
-    beforeUpload={() => false}  // quan trọng!
-    onChange={(info) => {
-      const file = info.fileList[0]?.originFileObj;
+            <Upload
+              accept="image/*"
+              beforeUpload={() => false}
+              showUploadList={false}
+              onChange={handleFileChange}
+            >
+              <Button icon={<UploadOutlined />}>Chọn ảnh từ thiết bị</Button>
+            </Upload>
 
-      if (!file) return;
-      setFile(file);
-
-      // Preview chuẩn
-      const reader = new FileReader();
-      reader.onload = (e) => setPreview(e.target.result);
-      reader.readAsDataURL(file);
-    }}
-  >
-    <Button icon={<UploadOutlined />}>Chọn ảnh từ thiết bị</Button>
-  </Upload>
-
-  {preview && (
-    <img
-      src={preview}
-      alt="Avatar Preview"
-      style={{
-        marginTop: 10,
-        width: 100,
-        height: 100,
-        borderRadius: "50%",
-        objectFit: "cover",
-      }}
-    />
-  )}
-</Form.Item>
-
+            {preview && (
+              <img
+                src={preview}
+                alt="Avatar Preview"
+                style={{
+                  marginTop: 10,
+                  width: 100,
+                  height: 100,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+            )}
+          </Form.Item>
 
           <Form.Item>
             <Button type="primary" htmlType="submit" block>

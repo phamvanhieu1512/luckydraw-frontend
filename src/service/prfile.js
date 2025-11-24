@@ -34,21 +34,28 @@ const updateProfile = async (data) => {
   const userID = localStorage.getItem("userId");
   const formData = new FormData();
 
-  // Nếu có file, append với key 'image'
-  if (data.avatarFile) {
-    formData.append("image", data.avatarFile); // phải trùng với upload.single("image")
+  // File upload từ AntD
+  if (data.avatarFile && data.avatarFile.originFileObj) {
+    formData.append("image", data.avatarFile.originFileObj); 
   }
 
-  // Các field khác
+  // Append các field text
   Object.keys(data).forEach((key) => {
     if (key !== "avatarFile") formData.append(key, data[key]);
   });
+
+  // Debug lại
+  for (const pair of formData.entries()) {
+    console.log("FORMDATA:", pair[0], pair[1]);
+  }
 
   try {
     const res = await axios.put(
       `http://localhost:5000/api/user/update/${userID}`,
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      {
+        headers: { "Content-Type": "multipart/form-data" }
+      }
     );
     message.success("Cập nhật thành công!");
     setUser(res.data.user);
@@ -57,6 +64,7 @@ const updateProfile = async (data) => {
     message.error("Cập nhật thất bại!");
   }
 };
+
 
 
   useEffect(() => {

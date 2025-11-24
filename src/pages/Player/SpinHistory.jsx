@@ -74,8 +74,8 @@ const SpinHistory = () => {
 
       const combinedData = [...allSpinData, ...fakeSpinData];
 
-      setSpinLogs(combinedData);
-      setFilteredLogs(combinedData);
+      // setSpinLogs(combinedData);
+      // setFilteredLogs(combinedData);
 
       setSpinLogs(allSpinData);
       setFilteredLogs(allSpinData);
@@ -154,10 +154,9 @@ const SpinHistory = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <Title level={2}>Lịch sử mở hộp</Title>
 
       <Card style={{ marginBottom: 20 }}>
-        <Row gutter={16}>
+       <Row gutter={16} justify="center" align="middle" style={{ marginTop: 20 }}>
           {/* <Col>
             <RangePicker
               onChange={handleDateChange}
@@ -166,19 +165,18 @@ const SpinHistory = () => {
             />
           </Col> */}
           <Col>
-  <Input
-    style={{ width: '500px'}}
-    placeholder="Tìm theo Người chơi"
-    value={searchText}
-    allowClear
-    onChange={(e) => {
-      const value = e.target.value;
-      setSearchText(value);
-      filterLogs(value, dateRange); // lọc trực tiếp khi gõ
-    }}
-  />
-</Col>
-
+          <Input
+            style={{ width: '800px'}}
+            placeholder="Tìm theo Người chơi"
+            value={searchText}
+            allowClear
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchText(value);
+              filterLogs(value, dateRange); // lọc trực tiếp khi gõ
+            }}
+          />
+        </Col>
         </Row>
       </Card>
 
@@ -189,6 +187,7 @@ const SpinHistory = () => {
           rowKey={(record) => record._id}
           pagination={{ pageSize: 10 }}
           loading={loading}
+          locale={{ emptyText: "🔍 Tìm kiếm không trùng kết quả" }}
         />
       </Card>
     </div>

@@ -43,8 +43,8 @@ const Header = () => {
     { key: "/player", icon: <GiftOutlined />, label: "Mystery Box" },
     { key: "/player/spinHistory", icon: <HistoryOutlined />, label: "Spin History" },
     { key: "/player/unboxing-history", icon: <HistoryOutlined />, label: "Unboxing History" },
-    { key: "/player/wallet", icon: <WalletOutlined />, label: "Wallet" },
-    { key: "/player/profile", icon: <UserOutlined />, label: "Profile" },
+    // { key: "/player/wallet", icon: <WalletOutlined />, label: "Wallet" },
+    // { key: "/player/profile", icon: <UserOutlined />, label: "Profile" },
     { key: "logout", icon: <LogoutOutlined />, label: "Logout" },
   ];
 

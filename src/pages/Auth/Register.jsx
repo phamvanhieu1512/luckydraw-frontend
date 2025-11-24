@@ -1,7 +1,10 @@
+// src/pages/Register.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Card, Input, Button, Form, message } from "antd";
+import { Card, Input, Button, Form, message, Typography } from "antd";
 import { register } from "../../service/register.js";
+
+const { Title, Text } = Typography;
 
 const Register = () => {
   const [loading, setLoading] = useState(false);
@@ -28,17 +31,32 @@ const Register = () => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "#f0f2f5",
+        background: "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)",
+        padding: 20,
       }}
     >
-      <Card title="Register" style={{ width: 400 }}>
-        <Form layout="vertical" onFinish={handleRegister}>
+      <Card
+        style={{
+          width: 400,
+          borderRadius: 16,
+          boxShadow: "0 12px 28px rgba(0,0,0,0.25)",
+          backgroundColor: "rgba(255,255,255,0.95)",
+          padding: "40px 30px",
+          textAlign: "center",
+        }}
+      >
+        <Title level={2} style={{ marginBottom: 10 }}>
+          Đăng ký
+        </Title>
+        <Text type="secondary">Tạo tài khoản mới để bắt đầu</Text>
+
+        <Form layout="vertical" onFinish={handleRegister} style={{ marginTop: 30 }}>
           <Form.Item
-            label="Full Name"
+            label="Họ và tên"
             name="fullName"
             rules={[{ required: true, message: "Vui lòng nhập tên!" }]}
           >
-            <Input placeholder="Full Name" />
+            <Input placeholder="Họ và tên" style={{ borderRadius: 8, height: 42 }} />
           </Form.Item>
 
           <Form.Item
@@ -49,20 +67,20 @@ const Register = () => {
               { type: "email", message: "Email không hợp lệ!" },
             ]}
           >
-            <Input placeholder="Email" />
+            <Input placeholder="Email" style={{ borderRadius: 8, height: 42 }} />
           </Form.Item>
 
           <Form.Item
-            label="Password"
+            label="Mật khẩu"
             name="password"
             rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
             hasFeedback
           >
-            <Input.Password placeholder="Password" />
+            <Input.Password placeholder="Mật khẩu" style={{ borderRadius: 8, height: 42 }} />
           </Form.Item>
 
           <Form.Item
-            label="Confirm Password"
+            label="Xác nhận mật khẩu"
             name="confirm"
             dependencies={["password"]}
             hasFeedback
@@ -78,18 +96,30 @@ const Register = () => {
               }),
             ]}
           >
-            <Input.Password placeholder="Confirm Password" />
+            <Input.Password placeholder="Xác nhận mật khẩu" style={{ borderRadius: 8, height: 42 }} />
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" block loading={loading}>
-              Register
+            <Button
+              type="primary"
+              htmlType="submit"
+              block
+              loading={loading}
+              style={{
+                borderRadius: 8,
+                height: 42,
+                fontSize: 16,
+                background: "linear-gradient(90deg, #6a11cb 0%, #2575fc 100%)",
+                border: "none",
+              }}
+            >
+              Đăng ký
             </Button>
           </Form.Item>
 
-          <div style={{ textAlign: "center" }}>
-            Đã có tài khoản? <Link to="/">Login</Link>
-          </div>
+          <Text type="secondary">
+            Đã có tài khoản? <Link to="/" style={{ fontWeight: 500 }}>Đăng nhập</Link>
+          </Text>
         </Form>
       </Card>
     </div>
