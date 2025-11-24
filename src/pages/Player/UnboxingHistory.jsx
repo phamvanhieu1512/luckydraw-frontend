@@ -1,66 +1,97 @@
 import React, { useEffect, useState } from "react";
-import { Table, DatePicker, Button, message, Typography } from "antd";
+import { Table, DatePicker, Button, message, Typography, Card } from "antd";
 import { ethers } from "ethers";
 import LuckyDrawABI from "../abis/LuckyDraw.json";
 
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
-const CONTRACT_ADDRESS = "0xaE869D99503Bc482C8aaE57956bE78bBa8B03Bb8";
+const CONTRACT_ADDRESS = "0x400100F5014f2acAca15DDC667B5528F789e2CBC";
 
 const UnboxingHistory = () => {
+  const [account, setAccount] = useState(null);
+  const [provider, setProvider] = useState(null);
+  const [contract, setContract] = useState(null);
   const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState([]);
-  const [userAddress, setUserAddress] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Lấy địa chỉ ví người dùng
-  const getUserAddress = async () => {
-    if (!window.ethereum) {
-      message.error("Vui lòng kết nối MetaMask");
-      return null;
+  // =============================
+  // KẾT NỐI METAMASK
+  // =============================
+  const connectWallet = async () => {
+    if (!window.ethereum) return message.error("Hãy cài MetaMask trước!");
+
+    try {
+      const _provider = new ethers.BrowserProvider(window.ethereum);
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+
+      if (!accounts.length) return message.error("Không thấy ví nào!");
+
+      const signer = await _provider.getSigner();
+
+      setProvider(_provider);
+      setAccount(accounts[0]);
+      setContract(new ethers.Contract(CONTRACT_ADDRESS, LuckyDrawABI.abi, signer));
+
+      localStorage.setItem("walletConnected", "true");
+      message.success("Kết nối ví thành công!");
+    } catch (err) {
+      console.error(err);
+      message.error("Không thể kết nối ví!");
     }
-    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-    const addr = accounts[0];
-    setUserAddress(addr);
-    return addr;
   };
 
-  // Lấy lịch sử spin của chính mình
+  // =============================
+  // KHÔI PHỤC KẾT NỐI KHI REFRESH
+  // =============================
+  useEffect(() => {
+    const connected = localStorage.getItem("walletConnected");
+    if (!connected) return;
+
+    const restoreConnection = async () => {
+      if (!window.ethereum) return;
+
+      const _provider = new ethers.BrowserProvider(window.ethereum);
+      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      if (!accounts.length) return;
+
+      const signer = await _provider.getSigner();
+
+      setProvider(_provider);
+      setAccount(accounts[0]);
+      setContract(new ethers.Contract(CONTRACT_ADDRESS, LuckyDrawABI.abi, signer));
+    };
+
+    restoreConnection();
+  }, []);
+
+  // =============================
+  // LẤY LỊCH SỬ MỞ HỘP
+  // =============================
   const fetchMySpins = async () => {
-    const address = userAddress || (await getUserAddress());
-    if (!address) return;
+    if (!contract || !account) return;
 
     try {
       setLoading(true);
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, LuckyDrawABI.abi, provider);
 
-      const spins = await contract.getUserSpins(address);
+      const spins = await contract.getUserSpins(account);
 
-      const data = spins.map((spin, idx) => ({
-        _id: `${address}-${spin.timestamp.toString()}-${idx}`,
+      const parsed = spins.map((spin, idx) => ({
+        _id: `${account}-${spin.timestamp.toString()}-${idx}`,
         createdAt: new Date(Number(spin.timestamp) * 1000),
         rewardType: spin.rewardType,
-        prizeId: {
-          name:
-            spin.rewardType === "nft"
-              ? `NFT #${spin.nftId}`
-              : spin.rewardType === "token"
-              ? address // hiển thị địa chỉ ví
-              : "May mắn",
-          imageUrl:
-            spin.rewardType === "nft"
-              ? `https://example.com/nft/${spin.nftId}.png`
-              : null,
-        },
+        nftId: spin.nftId?.toString(),
+        tokenAmount: spin.amount ? ethers.formatEther(spin.amount) : "0",
       }));
 
-      // Lọc theo khoảng thời gian nếu có
-      let filtered = data;
+      let filtered = parsed;
+
       if (dateRange.length === 2) {
         const [start, end] = dateRange;
-        filtered = data.filter(
+        filtered = parsed.filter(
           (log) => log.createdAt >= start.toDate() && log.createdAt <= end.toDate()
         );
       }
@@ -68,59 +99,79 @@ const UnboxingHistory = () => {
       setLogs(filtered);
     } catch (err) {
       console.error(err);
-      message.error("Lấy lịch sử mở hộp thất bại");
+      message.error("Lấy lịch sử thất bại!");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMySpins();
-  }, [dateRange]);
+    if (account) fetchMySpins();
+  }, [dateRange, account]);
 
   const columns = [
-    {
-      title: "Thời gian",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date) => date.toLocaleString(),
+  {
+    title: "Thời gian",
+    dataIndex: "createdAt",
+    render: (d) => d.toLocaleString(),
+  },
+  {
+    title: "Phần thưởng",
+    key: "reward",
+    render: (_, record) => {
+      if (record.rewardType === "none") {
+        return "Không trúng";
+      }
+      if (record.rewardType === "token") {
+        return `Token: ${record.tokenAmount}`;
+      }
+      if (record.rewardType === "nft") {
+        return `NFT #${record.nftId}`;
+      }
+      return "-";
     },
-    {
-      title: "Tên giải",
-      dataIndex: ["prizeId", "name"],
-      key: "prize",
-    },
-    {
-      title: "Giá trị",
-      dataIndex: "rewardType",
-      key: "rewardType",
-      render: (text) => (text === "none" ? "Vô giá" : text),
-    },
-  ];
+  },
+];
+
 
   return (
     <div style={{ padding: 20 }}>
       <h2>Lịch sử mở hộp của tôi</h2>
 
-      {/* Hiển thị địa chỉ ví */}
-      {userAddress && (
-        <Text strong style={{ display: "block", marginBottom: 16 }}>
-          Đã kết nối: {userAddress}
-        </Text>
+      {/* ======================================
+          NẾU CHƯA KẾT NỐI VÍ → CHỈ HIỆN NÚT
+      ====================================== */}
+      {!account ? (
+        <Card style={{ width: 400 }}>
+          <Button
+            type="primary"
+            block
+            onClick={connectWallet}
+            style={{ height: 45, fontSize: 16 }}
+          >
+            Kết nối ví MetaMask
+          </Button>
+        </Card>
+      ) : (
+        <>
+          <Text strong style={{ display: "block", marginBottom: 16 }}>
+            Đã kết nối: {account}
+          </Text>
+
+          <div style={{ marginBottom: 16, display: "flex", gap: 16 }}>
+            <RangePicker onChange={(d) => setDateRange(d || [])} />
+            <Button onClick={fetchMySpins}>Cập nhật</Button>
+          </div>
+
+          <Table
+            columns={columns}
+            dataSource={logs}
+            loading={loading}
+            rowKey={(r) => r._id}
+            pagination={{ pageSize: 10 }}
+          />
+        </>
       )}
-
-      <div style={{ marginBottom: 16, display: "flex", gap: 16 }}>
-        <RangePicker onChange={(dates) => setDateRange(dates || [])} />
-        <Button onClick={fetchMySpins}>Cập nhật</Button>
-      </div>
-
-      <Table
-        columns={columns}
-        dataSource={logs}
-        rowKey={(record) => record._id}
-        loading={loading}
-        pagination={{ pageSize: 10 }}
-      />
     </div>
   );
 };

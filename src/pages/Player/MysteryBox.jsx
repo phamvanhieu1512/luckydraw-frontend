@@ -5,7 +5,7 @@ import { ethers } from "ethers";
 import LuckyDrawABI from "../abis/LuckyDraw.json";
 
 const { Title, Text } = Typography;
-const LUCKYDRAW_ADDRESS = "0xaE869D99503Bc482C8aaE57956bE78bBa8B03Bb8";
+const LUCKYDRAW_ADDRESS = "0x400100F5014f2acAca15DDC667B5528F789e2CBC";
 
 const MysteryBox = () => {
   const [provider, setProvider] = useState(null);
@@ -19,53 +19,63 @@ const MysteryBox = () => {
   const [showConfetti, setShowConfetti] = useState(false);
 
   // Kết nối Metamask
-  const connectWallet = async () => {
-  if (!window.ethereum) {
-    alert("Cài Metamask trước nhé!");
-    return;
-  }
+ // Kết nối ví
+const connectWallet = async () => {
+  if (!window.ethereum) return alert("Cài Metamask trước nhé!");
 
   try {
     const _provider = new ethers.BrowserProvider(window.ethereum);
     const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
 
-    if (!accounts || accounts.length === 0) {
-      alert("Chưa có account nào kết nối!");
-      return;
-    }
+    if (!accounts?.length) return alert("Chưa có account nào kết nối!");
 
     const _signer = await _provider.getSigner();
     setProvider(_provider);
     setSigner(_signer);
     setAccount(accounts[0]);
+    setContract(new ethers.Contract(LUCKYDRAW_ADDRESS, LuckyDrawABI.abi, _signer));
 
-    // Luôn tạo contract mới khi connectWallet được gọi
-    const luckyDraw = new ethers.Contract(LUCKYDRAW_ADDRESS, LuckyDrawABI.abi, _signer);
-    setContract(luckyDraw);
+    // Lưu trạng thái đã kết nối
+    localStorage.setItem("walletConnected", "true");
   } catch (err) {
-    console.error(err);
+    console.error("Lỗi khi kết nối ví:", err);
   }
 };
 
+// Ngắt kết nối ví
+const disconnectWallet = () => {
+  setAccount(null);
+  setProvider(null);
+  setSigner(null);
+  setContract(null);
+  setReward(null);
+  setOpen(false);
 
-  // Ngắt kết nối ví
-  const disconnectWallet = () => {
-    setAccount(null);
-    setProvider(null);
-    setSigner(null);
-    setContract(null);
-    setReward(null);
-    setOpen(false);
+  // Xoá trạng thái kết nối
+  localStorage.removeItem("walletConnected");
+};
+
+// Khi reload trang: khôi phục trạng thái kết nối (nếu có)
+useEffect(() => {
+  const connected = localStorage.getItem("walletConnected");
+  if (!connected) return;
+
+  const restoreConnection = async () => {
+    if (!window.ethereum) return;
+
+    const _provider = new ethers.BrowserProvider(window.ethereum);
+    const accounts = await window.ethereum.request({ method: "eth_accounts" });
+    if (!accounts?.length) return;
+
+    const _signer = await _provider.getSigner();
+    setProvider(_provider);
+    setSigner(_signer);
+    setAccount(accounts[0]);
+    setContract(new ethers.Contract(LUCKYDRAW_ADDRESS, LuckyDrawABI.abi, _signer));
   };
 
-  // Tự động kết nối nếu đã có account
-  // useEffect(() => {
-  //   if (window.ethereum) {
-  //     window.ethereum.request({ method: "eth_accounts" }).then(accounts => {
-  //       if (accounts.length > 0) connectWallet();
-  //     });
-  //   }
-  // }, []);
+  restoreConnection();
+}, []);
 
   // Mở hộp
  const handleOpenBox = async () => {
@@ -78,6 +88,7 @@ const MysteryBox = () => {
     setShowConfetti(false);
 
     try {
+
       const price = await contract.getPrice();
       console.log("Box Price:", price.toString()); // 100000000000000000
 

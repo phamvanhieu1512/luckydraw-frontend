@@ -10,11 +10,16 @@ import Profile from "../pages/Player/Profile";
 import SpinHistory from "../pages/Player/SpinHistory";
 import UnboxingHistory from "../pages/Player/UnboxingHistory";
 import Wallet from "../pages/Player/Wallet";
+import Register from "../pages/Auth/Register"
 
 export const routes = [
   {
     path: "/",
     page: Login,
+  },
+  {
+    path: "/register",
+    page: Register,
   },
 
   // admin

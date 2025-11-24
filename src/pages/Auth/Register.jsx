@@ -1,33 +1,25 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Card, Input, Button, Form, message } from "antd";
+import { register } from "../../service/register.js";
 
 const Register = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // const handleRegister = async (values) => {
-  //   const { fullName, email, password } = values;
-
-  //   setLoading(true);
-  //   try {
-  //     // Gọi API register backend
-  //     // Giả lập backend: /api/auth/register
-  //     const res = await axios.post("/api/auth/register", {
-  //       fullName,
-  //       email,
-  //       password,
-  //     });
-
-  //     message.success("Đăng ký thành công! Hãy đăng nhập.");
-  //     navigate("/login"); // chuyển sang trang login
-  //   } catch (err) {
-  //     console.error(err);
-  //     message.error(err.response?.data?.message || "Register failed");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const handleRegister = async (values) => {
+    const { fullName, email, password } = values;
+    setLoading(true);
+    try {
+      const res = await register(fullName, email, password);
+      message.success(res.message);
+      navigate("/player");
+    } catch (err) {
+      message.error(err.response?.data?.message || "Đăng ký thất bại!");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div
@@ -40,8 +32,7 @@ const Register = () => {
       }}
     >
       <Card title="Register" style={{ width: 400 }}>
-        <Form layout="vertical">
-          {/* onFinish={handleRegister} */}
+        <Form layout="vertical" onFinish={handleRegister}>
           <Form.Item
             label="Full Name"
             name="fullName"
@@ -95,6 +86,10 @@ const Register = () => {
               Register
             </Button>
           </Form.Item>
+
+          <div style={{ textAlign: "center" }}>
+            Đã có tài khoản? <Link to="/">Login</Link>
+          </div>
         </Form>
       </Card>
     </div>

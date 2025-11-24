@@ -7,7 +7,7 @@ const { Title } = Typography;
 const { RangePicker } = DatePicker;
 const { Search } = Input;
 
-const CONTRACT_ADDRESS = "0xaE869D99503Bc482C8aaE57956bE78bBa8B03Bb8";
+const CONTRACT_ADDRESS = "0x400100F5014f2acAca15DDC667B5528F789e2CBC";
 
 const SpinHistory = () => {
   const [spinLogs, setSpinLogs] = useState([]);
@@ -76,6 +76,9 @@ const SpinHistory = () => {
 
       setSpinLogs(combinedData);
       setFilteredLogs(combinedData);
+
+      setSpinLogs(allSpinData);
+      setFilteredLogs(allSpinData);
     } catch (err) {
       console.error("Lỗi khi lấy lịch sử spin:", err);
       message.error("Lấy dữ liệu thất bại");

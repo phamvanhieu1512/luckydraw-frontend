@@ -1,10 +1,25 @@
-import React, { useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+// src/pages/Login.jsx
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, Input, Button, Form, message } from "antd";
+import { login } from "../../service/login.js";
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleLogin = async (values) => {
+    setLoading(true);
+    try {
+      const { user } = await login(values.email, values.password);
+      message.success(`Đăng nhập thành công! Chào ${user.name}`);
+      navigate("/player");
+    } catch (err) {
+      message.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div
@@ -17,8 +32,7 @@ const Login = () => {
       }}
     >
       <Card title="Login" style={{ width: 350 }}>
-        <Form layout="vertical">
-          {/* onFinish={handleLogin} */}
+        <Form layout="vertical" onFinish={handleLogin}>
           <Form.Item
             label="Email"
             name="email"
@@ -43,6 +57,10 @@ const Login = () => {
               Login
             </Button>
           </Form.Item>
+
+          <div style={{ marginTop: 10, textAlign: "center" }}>
+          Chưa có tài khoản? <Link to="/register">Đăng ký</Link>
+        </div>
         </Form>
       </Card>
     </div>
